@@ -1,0 +1,24 @@
+echo '🏗️👷 Quality Gate: Checking your code before committing...'
+
+# Check Prettier standards
+npm run format ||
+(
+    echo '❌ Prettier Check Failed. Run npm run format, add changes and try commit again.';
+    false;
+)
+
+# Check ESLint Standards
+npm run lint ||
+(
+    echo '❌ ESLint Check Failed. Make the required changes listed above, add changes and try to commit again.'
+    false;
+)
+
+# Check TypeScript standards
+npm run type-check ||
+(
+    echo '❌ TypeScript Check Failed. Fix the type errors above and try again.'
+    false;
+)
+
+echo '✅ All quality checks passed! Committing your code now...'
