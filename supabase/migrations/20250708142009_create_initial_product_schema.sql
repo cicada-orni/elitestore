@@ -1,0 +1,90 @@
+
+CREATE TYPE public.discount_type AS ENUM ('percentage', 'fixed_amount');
+
+-- Table to store product categories
+CREATE TABLE public.categories (
+  id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name text NOT NULL UNIQUE,
+  description text,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Table to store general product information
+CREATE TABLE public.products (
+  id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  name text NOT NULL,
+  description text,
+  category_id bigint REFERENCES public.categories(id),
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Table for specific product variations
+CREATE TABLE public.product_variants (
+  id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  product_id bigint NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  sku text NOT NULL UNIQUE,
+  price numeric(10, 2) NOT NULL CHECK (price >= 0),
+  stock_quantity integer NOT NULL DEFAULT 0,
+  attributes jsonb,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Table for user profiles, linked to the authentication system
+CREATE TABLE public.profiles (
+  id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name text,
+  avatar_url text
+);
+
+-- Table to define promotional campaigns
+CREATE TABLE public.promotions (
+  id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  code text UNIQUE,
+  description text NOT NULL,
+  discount_type public.discount_type NOT NULL, 
+  discount_value numeric(10, 2) NOT NULL,
+  start_date timestamptz,
+  end_date timestamptz,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Table to define the rules for a promotion's applicability
+CREATE TABLE public.promotion_rules (
+  id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  promotion_id bigint NOT NULL REFERENCES public.promotions(id) ON DELETE CASCADE,
+  rule_type text NOT NULL,
+  rule_value text NOT NULL
+);
+
+-- Create table for user roles, linked to authentication
+CREATE TABLE public.user_roles (
+  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role text NOT NULL,
+  PRIMARY KEY (user_id, role)
+);
+
+-- Create table for role-based permissions
+CREATE TABLE public.role_permissions (
+  role text NOT NULL,
+  permission text NOT NULL,
+  PRIMARY KEY (role, permission)
+);
+
+-- Create table for customer orders
+CREATE TABLE public.orders (
+  id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  total_price numeric(10, 2) NOT NULL,
+  status text NOT NULL DEFAULT 'pending',
+  shipping_address jsonb,
+  created_at timestamptz DEFAULT now() NOT NULL
+);
+
+-- Create table for the items within an order
+CREATE TABLE public.order_items (
+  id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  order_id bigint NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  variant_id bigint REFERENCES public.product_variants(id) ON DELETE SET NULL,
+  quantity integer NOT NULL,
+  price_at_purchase numeric(10, 2) NOT NULL
+);
