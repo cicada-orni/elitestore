@@ -2,19 +2,38 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { z } from 'zod'
+import { LoginSchema } from '@/lib/schemas'
+import { LoginState } from '@/lib/definations'
 
-export async function login(formData: FormData) {
+export async function login(
+  prevState: LoginState,
+  formData: FormData,
+): Promise<LoginState> {
   const supabase = await createClient()
 
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const rawData = {
+    email: formData.get('email'),
+    password: formData.get('password'),
+  }
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  })
+  const validation = LoginSchema.safeParse(rawData)
+  if (!validation.success) {
+    const fieldErrors = z.flattenError(validation.error).fieldErrors
+    return {
+      error: 'Invalid form data',
+      errors: fieldErrors,
+    }
+  }
 
-  if (error) redirect('/login?message=Could not authentiicate user')
+  const { email, password } = validation.data
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) {
+    return {
+      error: 'Log in failed',
+      errors: { _form: [error.message] },
+    }
+  }
 
   revalidatePath('/', 'layout')
   redirect('/')

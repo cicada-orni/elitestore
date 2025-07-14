@@ -1,9 +1,17 @@
+'use client'
+import { useActionState } from 'react'
 import { Button } from '@/components/ui/atoms/button'
 import { Input } from '@/components/ui/atoms/input'
 import { signup } from './actions'
+import { SignupState } from '@/lib/definations'
 import Link from 'next/link'
 
+const initialState: SignupState = {
+  message: '',
+}
+
 export default function SignupPage() {
+  const [state, formAction] = useActionState(signup, initialState)
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-950">
@@ -13,7 +21,7 @@ export default function SignupPage() {
           </h2>
         </div>
         {/* The form now points to the signup action file we will create next */}
-        <form className="mt-8 space-y-6" action={signup}>
+        <form className="mt-8 space-y-6" action={formAction}>
           <div className="space-y-4 rounded-md">
             <div>
               <label htmlFor="full_name" className="sr-only">
@@ -26,7 +34,13 @@ export default function SignupPage() {
                 autoComplete="name"
                 required
                 placeholder="Full Name"
+                aria-invalid={!!state.errors?.fullName}
               />
+              {state.errors?.fullName && (
+                <p className="mt-1 text-xs text-red-500">
+                  {state.errors.fullName.join(', ')}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="email" className="sr-only">
@@ -39,7 +53,13 @@ export default function SignupPage() {
                 autoComplete="email"
                 required
                 placeholder="Email address"
+                aria-invalid={!!state.errors?.email}
               />
+              {state.errors?.email && (
+                <p className="mt-1 text-xs text-red-500">
+                  {state.errors.email.join(', ')}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
@@ -52,8 +72,24 @@ export default function SignupPage() {
                 autoComplete="new-password"
                 required
                 placeholder="Password"
+                aria-invalid={!!state.errors?.password}
               />
+              {state.errors?.password && (
+                <p className="mt-1 text-xs text-red-500">
+                  {state.errors.password.join(', ')}
+                </p>
+              )}
             </div>
+            {state.errors?._form && (
+              <div
+                className="rounded-md border border-red-400 bg-red-50 p-4"
+                aria-live="polite"
+              >
+                <p className="text-sm text-red-600">
+                  {state.errors._form.join(', ')}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col space-y-4">

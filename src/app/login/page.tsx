@@ -1,9 +1,17 @@
+'use client'
+import { useActionState } from 'react'
+import { LoginState } from '@/lib/definations'
 import { Button } from '@/components/ui/atoms/button'
 import { Input } from '@/components/ui/atoms/input'
 import { login } from './actions'
 import Link from 'next/link'
 
+const initialState: LoginState = {
+  message: '',
+}
+
 export default function LoginPage() {
+  const [state, formAction] = useActionState(login, initialState)
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="w-full max-w-md space-y-8 rounded-lg bg-white p-8 shadow-md dark:bg-gray-950">
@@ -12,7 +20,7 @@ export default function LoginPage() {
             Sign in
           </h2>
         </div>
-        <form className="mt-8 space-y-6" action={login}>
+        <form className="mt-8 space-y-6" action={formAction}>
           <div className="space-y-4 rounded-md">
             <div>
               <label htmlFor="email" className="sr-only">
@@ -25,7 +33,13 @@ export default function LoginPage() {
                 autoComplete="email"
                 required
                 placeholder="Email address"
+                aria-invalid={!!state.errors?.email}
               />
+              {state.errors?.email && (
+                <p className="mt-1 text-xs text-red-500">
+                  {state.errors.email.join(', ')}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
@@ -38,8 +52,24 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required
                 placeholder="Password"
+                aria-invalid={!!state.errors?.password}
               />
+              {state.errors?.password && (
+                <p className="mt-1 text-xs text-red-500">
+                  {state.errors.password.join(', ')}
+                </p>
+              )}
             </div>
+            {state.errors?._form && (
+              <div
+                className="rounded-md border border-red-400 bg-red-50 p-4"
+                aria-live="polite"
+              >
+                <p className="text-sm text-red-600">
+                  {state.errors._form.join(', ')}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col space-y-4">
