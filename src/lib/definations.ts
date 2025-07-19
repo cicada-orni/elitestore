@@ -18,3 +18,13 @@ export type LoginState = {
   }
   message?: string
 }
+
+export type Product = {
+  id: string
+  name: string
+  price: number
+}
+
+export type ProductsData = {
+  allProducts: Product[]
+}
