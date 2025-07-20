@@ -14,6 +14,7 @@ CREATE TABLE public.products (
   id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   name text NOT NULL,
   description text,
+  image_url text,
   category_id bigint REFERENCES public.categories(id),
   created_at timestamptz DEFAULT now() NOT NULL
 );

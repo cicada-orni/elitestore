@@ -2,13 +2,13 @@ import db from '@/lib/db'
 import { Prisma } from '@/generated/prisma'
 
 type ProductParent = Prisma.productsGetPayload<{
-  select: { id: true; name: true; description: true }
+  select: { id: true; name: true; description: true; image_url: true }
 }>
 export const resolvers = {
   Query: {
     allProducts: async () => {
       return db.products.findMany({
-        select: { id: true, name: true, description: true },
+        select: { id: true, name: true, description: true, image_url: true },
       })
     },
     product: async (_parent: undefined, { id }: { id: string }) => {
@@ -16,7 +16,7 @@ export const resolvers = {
         where: {
           id: BigInt(id),
         },
-        select: { id: true, name: true, description: true },
+        select: { id: true, name: true, description: true, image_url: true },
       })
     },
   },

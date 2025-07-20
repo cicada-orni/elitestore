@@ -1,4 +1,4 @@
-import { ProductList } from '@/components/ProductList'
+import { ProductList } from '@/components/ui/organisms/ProductList'
 
 export default function Home() {
   return (

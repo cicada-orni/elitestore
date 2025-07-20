@@ -1,62 +1,111 @@
+// prisma/seed.ts
+
 import { PrismaClient } from '../src/generated/prisma'
 import { faker } from '@faker-js/faker'
+import axios from 'axios'
 
 const prisma = new PrismaClient()
 
+async function getImages(query: string, count: number): Promise<string[]> {
+  const accessKey = process.env.UNSPLASH_ACCESS_KEY
+  if (!accessKey) {
+    console.error('UNSPLASH_ACCESS_KEY is not set in your .env file.')
+    throw new Error('Unsplash Access Key is missing.')
+  }
+
+  try {
+    const response = await axios.get('https://api.unsplash.com/search/photos', {
+      params: {
+        query: query,
+        per_page: count,
+        orientation: 'squarish',
+      },
+      headers: {
+        Authorization: `Client-ID ${accessKey}`,
+      },
+    })
+    interface UnsplashPhoto {
+  urls: {
+    regular: string;
+  };
+}
+
+    return response.data.results.map((photo: UnsplashPhoto) => photo.urls.regular)
+  } catch (error: unknown) {
+    let errorMessage = `Failed to fetch images for query "${query}": `
+    if (axios.isAxiosError(error)) {
+      errorMessage += error.response?.data || error.message
+    } else if (error instanceof Error) {
+      errorMessage += error.message
+    } else {
+      errorMessage += String(error)
+    }
+    console.error(errorMessage)
+    return Array(count).fill('https://via.placeholder.com/400')
+  }
+}
+
 async function main() {
-  await prisma.order_items.deleteMany()
-  await prisma.orders.deleteMany()
-  await prisma.user_roles.deleteMany()
-  await prisma.profiles.deleteMany()
-  await prisma.promotion_rules.deleteMany()
-  await prisma.promotions.deleteMany()
-  await prisma.product_variants.deleteMany()
-  await prisma.products.deleteMany()
-  await prisma.categories.deleteMany()
+  console.log('Seeding database...')
+  await prisma.product_variants.deleteMany({})
+  await prisma.products.deleteMany({})
+  await prisma.categories.deleteMany({})
 
-  const categories = await prisma.categories.createManyAndReturn({
-    data: [
-      { name: 'Apparel', description: 'Clothing and fashion items.' },
-      { name: 'Electronics', description: 'Gadgets and electronic devices.' },
-      { name: 'Home Goods', description: 'Items for your home and garden.' },
-      { name: 'Books', description: 'Printed and digital books.' },
-    ],
-  })
+  const categoriesData = [
+    { name: 'Apparel', query: 'fashion clothing' },
+    { name: 'Electronics', query: 'modern gadgets' },
+    { name: 'Home Goods', query: 'minimalist home decor' },
+    { name: 'Books', query: 'books aesthetic' },
+  ]
 
-  for (const category of categories) {
-    for (let i = 0; i < 20; i++) {
+  for (const cat of categoriesData) {
+    console.log(`Fetching images for ${cat.name}...`)
+    // Fetch 10 unique, high-quality images for this category
+    const imageUrls = await getImages(cat.query, 10)
+
+    const category = await prisma.categories.create({
+      data: { name: cat.name },
+    })
+
+    console.log(`Creating 10 products for ${cat.name}...`)
+    for (let i = 0; i < 10; i++) {
       const product = await prisma.products.create({
         data: {
           name: faker.commerce.productName(),
           description: faker.commerce.productDescription(),
+          // Use a different real image for each product
+          image_url: imageUrls[i],
           category_id: category.id,
         },
       })
 
-      const numVariants = faker.number.int({ min: 1, max: 5 })
-      for (let j = 0; j < numVariants; j++) {
-        await prisma.product_variants.create({
-          data: {
-            product_id: product.id,
-            sku: faker.string.alphanumeric(10).toUpperCase(),
-            price: parseFloat(faker.commerce.price()),
-            stock_quantity: faker.number.int({ min: 0, max: 100 }),
-            attributes: {
-              color: faker.color.human(),
-              size: faker.helpers.arrayElement(['XS', 'S', 'M', 'L', 'XL']),
-            },
-          },
-        })
-      }
+      await prisma.product_variants.create({
+        data: {
+          product_id: product.id,
+          sku: faker.string.alphanumeric(10).toUpperCase(),
+          price: parseFloat(faker.commerce.price({ min: 10, max: 200 })),
+          stock_quantity: faker.number.int({ min: 0, max: 100 }),
+        },
+      })
     }
   }
 }
 
 main()
   .catch((e) => {
-    console.log(e)
+    console.error(e)
     process.exit(1)
   })
   .finally(async () => {
     await prisma.$disconnect()
   })
+
+//   await prisma.order_items.deleteMany()
+// await prisma.orders.deleteMany()
+// await prisma.user_roles.deleteMany()
+// await prisma.profiles.deleteMany()
+// await prisma.promotion_rules.deleteMany()
+// await prisma.promotions.deleteMany()
+// await prisma.product_variants.deleteMany()
+// await prisma.products.deleteMany()
+// await prisma.categories.deleteMany()

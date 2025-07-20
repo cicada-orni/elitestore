@@ -5,7 +5,8 @@ export const typeDefs = gql`
   type Product {
     id: ID!
     name: String!
-    description: String!
+    description: String
+    image_url: String
     price: Float!
   }
 
