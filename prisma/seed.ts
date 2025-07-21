@@ -25,12 +25,14 @@ async function getImages(query: string, count: number): Promise<string[]> {
       },
     })
     interface UnsplashPhoto {
-  urls: {
-    regular: string;
-  };
-}
+      urls: {
+        regular: string
+      }
+    }
 
-    return response.data.results.map((photo: UnsplashPhoto) => photo.urls.regular)
+    return response.data.results.map(
+      (photo: UnsplashPhoto) => photo.urls.regular,
+    )
   } catch (error: unknown) {
     let errorMessage = `Failed to fetch images for query "${query}": `
     if (axios.isAxiosError(error)) {
@@ -47,9 +49,15 @@ async function getImages(query: string, count: number): Promise<string[]> {
 
 async function main() {
   console.log('Seeding database...')
-  await prisma.product_variants.deleteMany({})
-  await prisma.products.deleteMany({})
-  await prisma.categories.deleteMany({})
+  await prisma.order_items.deleteMany()
+  await prisma.orders.deleteMany()
+  await prisma.user_roles.deleteMany()
+  await prisma.profiles.deleteMany()
+  await prisma.promotion_rules.deleteMany()
+  await prisma.promotions.deleteMany()
+  await prisma.product_variants.deleteMany()
+  await prisma.products.deleteMany()
+  await prisma.categories.deleteMany()
 
   const categoriesData = [
     { name: 'Apparel', query: 'fashion clothing' },
@@ -60,15 +68,15 @@ async function main() {
 
   for (const cat of categoriesData) {
     console.log(`Fetching images for ${cat.name}...`)
-    // Fetch 10 unique, high-quality images for this category
-    const imageUrls = await getImages(cat.query, 10)
+    // Fetch 20 unique, high-quality images for this category
+    const imageUrls = await getImages(cat.query, 20)
 
     const category = await prisma.categories.create({
       data: { name: cat.name },
     })
 
-    console.log(`Creating 10 products for ${cat.name}...`)
-    for (let i = 0; i < 10; i++) {
+    console.log(`Creating 20 products for ${cat.name}...`)
+    for (let i = 0; i < 20; i++) {
       const product = await prisma.products.create({
         data: {
           name: faker.commerce.productName(),
@@ -78,15 +86,18 @@ async function main() {
           category_id: category.id,
         },
       })
-
-      await prisma.product_variants.create({
-        data: {
-          product_id: product.id,
-          sku: faker.string.alphanumeric(10).toUpperCase(),
-          price: parseFloat(faker.commerce.price({ min: 10, max: 200 })),
-          stock_quantity: faker.number.int({ min: 0, max: 100 }),
-        },
-      })
+      const numVariants = faker.number.int({ min: 1, max: 5 })
+      for (let j = 0; j < numVariants; j++) {
+        await prisma.product_variants.create({
+          data: {
+            product_id: product.id,
+            sku: faker.string.alphanumeric(10).toUpperCase(),
+            price: parseFloat(faker.commerce.price({ min: 10, max: 200 })),
+            image_url: imageUrls[j],
+            stock_quantity: faker.number.int({ min: 0, max: 100 }),
+          },
+        })
+      }
     }
   }
 }
@@ -99,13 +110,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect()
   })
-
-//   await prisma.order_items.deleteMany()
-// await prisma.orders.deleteMany()
-// await prisma.user_roles.deleteMany()
-// await prisma.profiles.deleteMany()
-// await prisma.promotion_rules.deleteMany()
-// await prisma.promotions.deleteMany()
-// await prisma.product_variants.deleteMany()
-// await prisma.products.deleteMany()
-// await prisma.categories.deleteMany()

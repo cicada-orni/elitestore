@@ -25,6 +25,7 @@ CREATE TABLE public.product_variants (
   product_id bigint NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
   sku text NOT NULL UNIQUE,
   price numeric(10, 2) NOT NULL CHECK (price >= 0),
+  image_url text,
   stock_quantity integer NOT NULL DEFAULT 0,
   attributes jsonb,
   created_at timestamptz DEFAULT now() NOT NULL
