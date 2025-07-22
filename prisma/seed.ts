@@ -49,6 +49,7 @@ async function getImages(query: string, count: number): Promise<string[]> {
 
 async function main() {
   console.log('Seeding database...')
+  await prisma.reviews.deleteMany()
   await prisma.order_items.deleteMany()
   await prisma.orders.deleteMany()
   await prisma.user_roles.deleteMany()
@@ -59,11 +60,26 @@ async function main() {
   await prisma.products.deleteMany()
   await prisma.categories.deleteMany()
 
+  const existingUsers = await prisma.users.findMany({
+    select: { id: true },
+  })
+
+  if (existingUsers.length === 0) {
+    console.error(
+      'No users found in auth.users table. Please sign up at least one test user in your application before seeding.',
+    )
+    process.exit(1)
+  }
+  console.log(
+    `Found ${existingUsers.length} existing users to assign reviews to.`,
+  )
+
   const categoriesData = [
     { name: 'Apparel', query: 'fashion clothing' },
     { name: 'Electronics', query: 'modern gadgets' },
     { name: 'Home Goods', query: 'minimalist home decor' },
     { name: 'Books', query: 'books aesthetic' },
+    { name: 'Grocery', query: 'Food and Beverages' },
   ]
 
   for (const cat of categoriesData) {
@@ -95,6 +111,18 @@ async function main() {
             price: parseFloat(faker.commerce.price({ min: 10, max: 200 })),
             image_url: imageUrls[j],
             stock_quantity: faker.number.int({ min: 0, max: 100 }),
+          },
+        })
+      }
+
+      const numReviews = faker.number.int({ min: 0, max: 5 })
+      for (let k = 0; k < numReviews; k++) {
+        await prisma.reviews.create({
+          data: {
+            product_id: product.id,
+            user_id: faker.helpers.arrayElement(existingUsers).id,
+            rating: faker.number.int({ min: 1, max: 5 }),
+            comment: faker.lorem.paragraph(),
           },
         })
       }

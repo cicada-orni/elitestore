@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { gql } from 'graphql-request'
 import { ProductsData } from '@/lib/definations'
 import { ProductCard } from '@/components/ui/molecules/ProductCard'
+import { ProductCardSkeleton } from '../molecules/ProductCardSkeleton'
 
 const GET_PRODUCTS = gql`
   query GetAllProducts {
@@ -20,7 +21,14 @@ export function ProductList() {
     queryKey: [GET_PRODUCTS],
   })
 
-  if (isLoading) return <p className="text-center">Loading products...</p>
+  if (isLoading)
+    return (
+      <div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <ProductCardSkeleton key={i} />
+        ))}
+      </div>
+    )
   if (error)
     return (
       <p className="text-destructive text-center">Error: {error.message}</p>

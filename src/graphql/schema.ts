@@ -1,25 +1,18 @@
-// import { gql } from 'graphql-tag'
-
-// export const typeDefs = gql`
-//   #OBJECT TYPES
-//   type Product {
-//     id: ID!
-//     name: String!
-//     description: String
-//     image_url: String
-//     price: Float!
-//   }
-
-//   #ENTRY POINTS
-//   type Query {
-//     product(id: ID!): Product
-//     allProducts: [Product!]
-//   }
-// `
-
 import { gql } from 'graphql-tag'
 
 export const typeDefs = gql`
+  type User {
+    id: ID!
+    email: String
+  }
+
+  type Review {
+    id: ID!
+    rating: Int!
+    comment: String
+    author: User
+  }
+
   type ProductVariant {
     id: ID!
     price: Float!
@@ -35,10 +28,22 @@ export const typeDefs = gql`
     image_url: String
     price: Float!
     variants: [ProductVariant!]
+    reviews: [Review!]
   }
 
+  input ReviewInput {
+    product_id: ID!
+    rating: Int!
+    comment: String
+  }
+
+  # -- ENTRY POINTS  --
   type Query {
     product(id: ID!): Product
     allProducts: [Product!]
+  }
+
+  type Mutation {
+    submitReview(input: ReviewInput!): Review
   }
 `
