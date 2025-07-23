@@ -1,39 +1,12 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
-import { gql } from 'graphql-request'
 import { ProductData } from '@/lib/definations'
 import { Heading } from '../atoms/Heading'
 import Image from 'next/image'
 import { ProductDetailsSkeleton } from './ProductDetailsSkeleton'
 import { ReviewCard } from '../molecules/ReviewCard'
-
-const GET_PRODUCT_BY_ID = gql`
-  query GetProductById($id: ID!) {
-    product(id: $id) {
-      id
-      name
-      description
-      image_url
-      price
-      variants {
-        id
-        price
-        stock_quantity
-        image_url
-        sku
-      }
-      reviews {
-        id
-        rating
-        comment
-        author {
-          id
-          email
-        }
-      }
-    }
-  }
-`
+import { ReviewForm } from '../molecules/ReviewForm'
+import { GET_PRODUCT_BY_ID } from '@/graphql/queries'
 
 export function ProductDetails({ id }: { id: string }) {
   const { data, isLoading, error } = useQuery<ProductData>({
@@ -111,6 +84,7 @@ export function ProductDetails({ id }: { id: string }) {
         ) : (
           <p className="text-muted-foreground mt-4">No reviews yet.</p>
         )}
+        <ReviewForm product_id={product.id} />
       </div>
     </>
   )
