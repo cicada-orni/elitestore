@@ -121,7 +121,7 @@ export function ReviewForm({ product_id }: { product_id: string }) {
           className="h-24 w-full rounded-md border bg-transparent p-2 text-sm"
           disabled={isPending}
         />
-        <Button className="mt-4" disabled={isPending}>
+        <Button className="mt-4" disabled={rating === 0 || isPending}>
           {isPending ? 'Submitting' : 'Submit Review'}
         </Button>
       </form>

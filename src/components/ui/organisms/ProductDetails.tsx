@@ -1,31 +1,40 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
-import { ProductData } from '@/lib/definations'
+import { ProductData, ProductVariant } from '@/lib/definations'
 import { Heading } from '../atoms/Heading'
 import Image from 'next/image'
 import { ProductDetailsSkeleton } from './ProductDetailsSkeleton'
 import { ReviewCard } from '../molecules/ReviewCard'
 import { ReviewForm } from '../molecules/ReviewForm'
 import { GET_PRODUCT_BY_ID } from '@/graphql/queries'
+import { VariantSelector } from '../molecules/VariantSelector'
+import { useState } from 'react'
 
 export function ProductDetails({ id }: { id: string }) {
   const { data, isLoading, error } = useQuery<ProductData>({
     queryKey: [GET_PRODUCT_BY_ID, { id }],
   })
+  const [selectedVariant, setSelectedVariant] = useState<
+    ProductVariant | undefined
+  >(undefined)
 
   if (isLoading) return <ProductDetailsSkeleton />
   if (error) return <p>Error: {error.message}</p>
   if (!data?.product) return <p>Product not found.</p>
 
   const { product } = data
+
+  const displayImage = selectedVariant?.image_url || product.image_url
+  const displayPrice = selectedVariant?.price || product.price
+
   return (
     <>
       <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2">
         {/* Image Column */}
         <div className="aspect-square overflow-hidden rounded-lg border">
-          {product.image_url && (
+          {displayImage && (
             <Image
-              src={product.image_url}
+              src={displayImage}
               alt={product.name}
               width={600}
               height={600}
@@ -41,9 +50,7 @@ export function ProductDetails({ id }: { id: string }) {
           </Heading>
           {/* Price Section */}
           <div className="mt-4">
-            <p className="text-foreground text-3xl">
-              ${product.price.toFixed(2)}
-            </p>
+            <p className="text-foreground text-3xl">${displayPrice.toFixed(2)}</p>
           </div>
           {/* Description Section */}
           <div className="mt-6">
@@ -55,18 +62,18 @@ export function ProductDetails({ id }: { id: string }) {
             </p>
           </div>
           {/* Variants Section */}
-          <div className="mt-6">
-            <Heading as="h2" size="h3" className="text-xl">
-              Available Variants
-            </Heading>
-            <ul className="text-muted-foreground mt-2 list-disc space-y-2 pl-4">
-              {product.variants?.map((variant) => (
-                <li key={variant.id}>
-                  SKU: {variant.sku} - Stock: {variant.stock_quantity}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {product.variants && product.variants.length > 0 && (
+            <div className="mt-6">
+              <Heading as="h2" size="h3" className="text-xl">
+                Available Variants
+              </Heading>
+              <VariantSelector
+                variants={product.variants}
+                selectedVariant={selectedVariant}
+                onVariantSelect={setSelectedVariant}
+              />
+            </div>
+          )}
         </div>
       </div>
       {/* --- BOTTOM SECTION: CUSTOMER REVIEWS --- */}
@@ -89,3 +96,4 @@ export function ProductDetails({ id }: { id: string }) {
     </>
   )
 }
+
